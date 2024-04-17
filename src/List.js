@@ -5,6 +5,7 @@ import { getPollOptions } from './firestore.js';
 const style = {
   width: 400,
 }
+//not really using this
 
 export default function List(){
     const [cards, setCards] = useState([]);
