@@ -1,8 +1,5 @@
 import "./App.css";
-import {
-  createPoll,
-  uploadPollOptions,
-  getPollOptions,
+import { createPoll, uploadPollOptions, getPollOptions,
   closePolls,
   isPollOpen,
 } from "./firestore";
@@ -20,14 +17,10 @@ const products = [
 ];
 const enumValue = (name) => Object.freeze({toString: () => name});
 
-const Pages = Object.freeze({
-  HomePage: enumValue("Pages.HomePage"),
-  PollPage: enumValue("Pages.PollPage")
-}); 
-
 const PollSections = Object.freeze({
   Create : enumValue("PollSections.Create"),
   AddOption : enumValue("PollSections.AddOption"),
+  HomePage : enumValue("PollSections.HomePage"),
   Voting : enumValue("PollSections.Voting"),
   Results : enumValue("PollSections.Results")
 })
@@ -71,16 +64,14 @@ function App() {
     }
   };
   return (
-    <div>
-      <Header />
-      <HomePage/>
-      <Poll></Poll>
-
-      <div>{openPoll ? <p>It's open</p> : <p> It's closed</p>}</div>
-      <DndProvider backend={HTML5Backend}>
-        <List />
-      </DndProvider>
-    </div>
+      <div>
+        <Header />
+        <Poll></Poll>
+        <div>{openPoll ? <p>It's open</p> : <p> It's closed</p>}</div>
+        <DndProvider backend={HTML5Backend}>
+          <List />
+        </DndProvider>
+      </div>
   );
 }
 
@@ -96,14 +87,37 @@ function Header() {
   );
 }
 
-function HomePage() {
+function Poll() {
+  const [currentSection, setCurrentSection] = useState(PollSections.HomePage);
+  const [pollCode, setPollCode] = useState("")
+  return (
+    <pollContext.Provider value={[pollCode, setPollCode]}>
+    <div>
+      <h1> Poll </h1>
+      <h3> {pollCode}</h3>
+      {currentSection===PollSections.HomePage ? <HomePage setCurrentSection = {setCurrentSection}/> : null}
+      {currentSection===PollSections.Create ? <PollCreation setCurrentSection = {setCurrentSection}/> : null}
+      {currentSection===PollSections.AddOption ? <AddOption setCurrentSection = {setCurrentSection}/> : null}
+      {currentSection===PollSections.Voting ? <PollVoting setCurrentSection = {setCurrentSection}/> : null}
+      {currentSection===PollSections.Results ? <PollResults setCurrentSection = {setCurrentSection}/> : null}
+    </div>
+    </pollContext.Provider>
+  );
+}
+
+function HomePage({setCurrentSection}) {
   const enterPoll = async () => {
     try {
       console.log("hello world");
+      setCurrentSection(PollSections.Voting);
     } catch (error) {
       console.log(error);
     }
   };
+
+  function createPoll(){
+    setCurrentSection(PollSections.Create);
+  }
 
   return (
     <div>
@@ -111,20 +125,6 @@ function HomePage() {
       {/* use flex to make it inline */}
       <Button className="button" onClick={createPoll}>Create A Poll </Button>
       <Button className="button" onClick={enterPoll}>Enter A Poll </Button>
-    </div>
-  );
-}
-
-function Poll() {
-  const [currentSection, setCurrentSection] = useState(PollSections.Create);
-  const [pollCode, setPollCode] = useState()
-  return (
-    <div>
-      <h1> Poll </h1>
-      {currentSection===PollSections.Create ? <PollCreation setCurrentSection = {setCurrentSection}/> : null}
-      {currentSection===PollSections.AddOption ? <AddOption setCurrentSection = {setCurrentSection}/> : null}
-      {currentSection===PollSections.Voting ? <PollVoting setCurrentSection = {setCurrentSection}/> : null}
-      {currentSection===PollSections.Results ? <PollResults setCurrentSection = {setCurrentSection}/> : null}
     </div>
   );
 }
@@ -149,13 +149,32 @@ function EnterPoll({setCurrentSection}) {
 }
 
 function PollCreation({setCurrentSection}) {
+  const [pollCode, setPollCode] = React.useContext(pollContext);
+  function createPoll(){
+    setCurrentSection(PollSections.AddOption);
+    setPollCode(generateCode());
+  }
+
+  function generateCode(){
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ23456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < 5) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
+  }
+
   return ( 
     <>
     <h1> Poll Creation</h1>
-    <button className="btn btn-large">Enter</button>
+    <button className="btn btn-large" onClick={createPoll}>Create poll</button>
     </>
   );
 }
+
 function AddOption({setCurrentSection}) {
   const [options, setOptions] = useState([]);
   const [text, setText] = useState("");
@@ -165,11 +184,11 @@ function AddOption({setCurrentSection}) {
 
   const addOption = async () => {
     setCurrentSection(PollSections.Voting);
-    try {
-      uploadPollOptions("shortPollCode", ["JAMES d"]);
-    } catch (error) {
-      console.log(error);
-    }
+    // try {
+    //   uploadPollOptions("shortPollCode", ["JAMES d"]);
+    // } catch (error) {
+    //   console.log(error);
+    // }
   };
 
   function handleSubmit(event) {
